@@ -1,0 +1,91 @@
+<?php
+
+/*
+__PocketMine Plugin__
+name=Randomness
+version=0.0.1
+author=Andrew Pan
+description=Port of the Essentials Bukkit plugin to PocketMine (Note: KsyMC already has a plugin named Essentials, so I named this one randomness)
+class=Essentials
+apiversion=7
+*/
+
+class Essentials implements Plugin{
+  private $api;
+	private $database;
+
+	public function construct(ServerAPI $api, $server=false){
+		$this->api = $api;
+		$this->debug = false;
+		$this->database=new SQLite3('MinePocket.db')
+/*
+rule commands SQL
+*/
+		$this->database->exec('CREATE TABLE IF NOT EXISTS rules(id INTEGER PRIMARY KEY, rule STRING)');
+/*
+AFK commands SQL
+*/
+		$this->database->exec('CREATE TABLE IF NOT EXISTS afkness(player STRING, afkness INTEGER CHECK("0", "1"))');
+		$this->afk = $this->database->prepare('INSERT INTO TABLE IF NOT EXISTS(player, afkness) VALUES(:player, :afkness)');
+/*
+End of SQL things
+*/
+		
+	}
+
+	public function init(){
+		$this->api->addHandler("player.move", array($this, "afkmv"), 15);
+		$this->api->console->register("acceptrules", "Accepts the server rules", array($this, "hcmd"));
+		$this->api->console->register("rules", "Lists server rules", array($this, "hcmd"));
+		$this->api->console->register("addrule", "Adds a server rule to list", array($this, "hcmd"));
+		$this->api->console->register("tpa", "Requests to teleport to a player", array($this, "hcmd"));
+		$this->api->console->register("tpaccept", "Accepts teleportation request", array($this, "hcmd"));
+		$this->api->console->register("afk", "Declares that you are AFK", array($this, "hcmd"));
+		$this->api->console->register("status", "Checks AFK status of a player", array($this, "hcmd"));
+		$this->api->console->register("Ping", "Pong!", array($this, "hcmd"));
+	}
+	
+	public function __destruct(){
+	}
+
+	public function hcmd($cmd, $arg){
+		switch($cmd){
+			case "addrule":
+				if(!$arg){
+					console('[Essentials] Usage: addrule [rule text]')
+				}else{
+					console('[Essentials] Feature coming soon! :D')
+				this->database->
+				}
+				break;
+			case "ping":
+				console('Pong!')
+				break;
+			case "afk":
+				if(!$arg)
+					console('[Essentials] Usage: afk [username]');
+				}else{
+					$afk = "1"
+					$this->afk->reset();
+					$this->afk->bindValue(':afkness', $afk);
+					$this->afk->bindValue(':player', $arg[0]);
+					console('[Essentials] Player' . $arg[0] . 'is now AFK.'
+				break;
+				}
+					
+	}
+				
+	public function afkmv($data, $event){
+		switch($event){
+			case "player.move":
+			$noafk = "0"
+			$this->afk->bindValue('afkness', $afk);
+				if($afk === "1"){
+					$this->afk->bindValue(':afkness', $noafk, SQLITE3_INTEGER);
+					$this->afk->bindValue(':player', $data[0], SQLITE3_TEXT); //This is assuming that the first string of data from player.move is even the player...LOL
+					$this->afk->execute();
+					console('[Essentials] Player' . $data[0] . 'is no longer AFK.')
+				}
+	
+					
+
