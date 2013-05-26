@@ -17,7 +17,7 @@ class Randomness implements Plugin{
 	public function construct(ServerAPI $api, $server=false){
 		$this->api = $api;
 		$this->debug = false;
-		$this->database=new SQLite3('MinePocket.db')
+		$this->database=new SQLite3('Randomness.db')
 /*
 rule commands SQL
 */
