@@ -4,13 +4,13 @@
 __PocketMine Plugin__
 name=Randomness
 version=0.0.1
-author=Andrew Pan
+author=PEPlayer
 description=Port of the Essentials Bukkit plugin to PocketMine (Note: KsyMC already has a plugin named Essentials, so I named this one randomness)
-class=Essentials
+class=Randomness
 apiversion=7
 */
 
-class Essentials implements Plugin{
+class Randomness implements Plugin{
   private $api;
 	private $database;
 
@@ -85,7 +85,10 @@ End of SQL things
 					$this->afk->bindValue(':player', $data[0], SQLITE3_TEXT); //This is assuming that the first string of data from player.move is even the player...LOL
 					$this->afk->execute();
 					console('[Essentials] Player' . $data[0] . 'is no longer AFK.')
-				}
+			break;
+			}
+	}
+}
 	
 					
 
