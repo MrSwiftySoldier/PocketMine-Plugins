@@ -1,1 +1,239 @@
-<?php   /* __PocketMine Plugin__ name=PEPlugin version=0.0.1 author=Andrew Pan description=Port of the Essentials Bukkit plugin to PocketMine class=PEPlugin apiversion=7 */  class PEPlugin implements Plugin {     private $api;     private $database;     private $afk;     private $un_afk;     private $afk_check;     private $tpa_request;     private $tpa_request_accept;     private $tpa_request_targetfind;     private $disable_com;     private $enable_com;     private $check_com_status;           public function __construct(ServerAPI $api, $server = false)     {         $this->api      = $api;         $this->database = new SQLite3('MinePocket.db');         /*          * Rules SQL          * (Never to be used)          */        $this->database->exec('CREATE TABLE IF NOT EXISTS rules(id INTEGER PRIMARY KEY, rule TEXT)');         /*          * AFK SQL          */        $this->database->exec('CREATE TABLE IF NOT EXISTS afkness (id INTEGER PRIMARY KEY AUTOINCREMENT, player TEXT)');         $this->afk = $this->database->prepare('INSERT INTO afkness(player) VALUES(:player)');         $this->un_afk - $this->database->prepare('DELETE FROM afkness WHERE player = :player');         $this->afk_check = $this->database->prepare('SELECT * FROM afkness WHERE player = :player');         /*          * TP/A SQL          */        $this->database->exec('CREATE TABLE IF NOT EXISTS tpa (id INTEGER PRIMARY KEY AUTOINCREMENT, inrequest STRING, outrequest STRING)');         $this->tpa_request            = $this->database->prepare('INSERT INTO tpa(inrequest, outrequest) VALUES(:inrequest, :outrequest)');         $this->tpa_request_accept     = $this->database->prepare('DELETE FROM tpa WHERE inrequest = :inrequest AND outrequest = :outrequest');         $this->tpa_request_targetfind = $this->database->prepare('SELECT inrequest FROM tpa WHERE outrequest = :outrequest');         /*          *Disable SQL          */        $this->database->exec('CREATE TABLE IF NOT EXISTS disable (id INTEGER PRIMARY KEY AUTOINCREMENT, com STRING)');         $this->disable_com      = $this->database->prepare('INSERT INTO disable(com) VALUES(:com)');         $this->enable_com       = $this->database->prepare('DELETE FROM disable WHERE com = :com');         $this->check_com_status = $this->database->prepare('SELECT * FROM disable WHERE com = :com');         /*          * End of SQL          */              }           public function init()     {         // $this->api->addHandler("player.move", array(         //     $this,         //     "pevent"         // ), 15);         $this->api->console->register("tpa", "Requests to teleport to a player", array(             $this,             "hcmd"        ));         $this->api->console->register("tpaccept", "Accepts teleportation request", array(             $this,             "hcmd"        ));         $this->api->console->register("afk", "Declares that you are AFK", array(             $this,             "hcmd"        ));         $this->api->console->register("status", "Checks AFK status of a player", array(             $this,             "hcmd"        ));         $this->api->console->register("aboutplugin", "About PEPlugin", array(             $this,             "hcmd"        ));         $this->api->console->register("disable", "Disables a component of PEPlugin", array(             $this,             "hcmd"        ));         $this->api->console->register("enable", "Enables a component of PEPlugin that was previously disabled", array(             $this . "hcmd"        ));         $this->api->console->register("run", "Runs command as the Server user", array(             $this,             "hcmd"        ));         $this->api->console->register("cmdb", "Registers a diamond block as a command block", array(             $this,             "hcmd"        ));     }           public function __destruct()     {     }           //    public function pevent($event, $data)     //    {     //        switch ($data) {     //            case "player.move":     //                $EIDdat = $this->api->player->getByEID($data["player"]);     //                $this->afk_check->reset();     //                $this->afk_check->bindValue(":player", $EIDdat, SQLITE_TEXT);     //                $this->afk_check->execute();     //                if ($afk === 1) {     //                    $noafk = 0;     //                    $this->no_afk->reset();     //                    $this->no_afk->bindValue(":player", $EIDdat, SQLITE_TEXT);     //                    $this->no_afk->execute();     //                    $this->api->chat->broadcast($message = "[PEPlugin] Player " . $EIDdat . "is no longer AFK.");     //                    break;     //                }     //        }     //    }     public function hcmd($cmd, $arg)     {         switch ($cmd) {             case "afk":                 $com = "afk";                 $this->com_check_status->reset();                 $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT);                 $check = $this->com_check_status->execute();                 if ($check === null) {                     if (!$arg) {                         //console('[PEPlugin] Usage: afk [Your username]'); (OLD)                         console('[PEPlugin] Usage: afk');                     } else {                         $player = $issuer;                         $this->afk->reset();                         $this->afk->bindValue(':player', $player, SQLITE_TEXT);                         $this->afk->execute();                         console('[PEPlugin] Player ' . $player . ' is now AFK.');                     }                 } else {                     console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.');                 }                 break;             case "run":                 $com = "runcmd";                 $this->com_check_status->reset();                 $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT);                 $check = $this->com_check_status->execute();                 if ($check === null) {                     if (!arg) {                         console('[PEPlugin] Usage: run [command]');                     } else {                         $this->api->console->run($line = $arg, $issuer = "Server");                     }                 } else {                     console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.');                 }                 break;             case "tpa":                 $com = "tp";                 $this->com_check_status->reset();                 $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT);                 $check = $this->com_check_status->execute();                 if ($check === null) {                     if (!$arg) {                         //console('[PEPlugin] Usage: tpa [your username] [username to teleport to]'); (OLD)                         console('[PEPlugin] Usage: tpa [player to teleport to]');                     } else {                         $this->tpa_request->reset();                         $this->tpa_request->bindValue(':outrequest', $issuer, SQLITE_TEXT);                         $this->tpa_request->bindValue(':inrequest', $arg[0], SQLITE_TEXT);                         $this->tpa_request->execute();                         console('[PEPlugin] Teleportation request to ' . $arg[0] . ' sent successfully.');                     }                 } else {                     console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.');                 }                 break;             case "tpaccept":                 $com = tp;                 $this->com_check_status->reset();                 $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT);                 $check = $this->com_check_status->execute();                 if ($check === null) {                     if (!$arg) {                         //console('[PEPlugin] Usage: tpaccept [your username]'); (OLD METHOD)                         console('[PEPlugin] Usage: tpaccept');                     } else {                         $name = $issuer;                         $this->tpa_request_targetfind->reset();                         $this->tpa_request_targetfind->bindValue(':outrequest', $name, SQLITE_TEXT);                         $target = $this->tpa_request_targetfind->execute();                         $this->tpa_request_accept->reset();                         $this->tpa_request_accept->bindValue(':outrequest', $name, SQLITE_TEXT);                         $this->tpa_request_accept->bindValue(':inrequest', $target, SQLITE_TEXT);                         $this->tpa_request_accept->execute();                         $this->api->player->teleport($name, $target);                         console('[PEPlugin] Teleported ' . $name . ' to ' . $target . ' successfully.');                     }                 } else {                     console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.');                 }                                   break;             case "disable":                 if (!arg) {                     console('[PEPlugin] Usage: disable (component) [tp] [runcmd] [afk]');                 } else {                     $com = $arg[0];                     $this->disable_com->reset();                     $this->disable_com->bindValue(':com', $arg[0], SQLITE_TEXT);                     $this->disable_com->execute();                     console('[PEPlugin] Component ' . $com . ' disabled successfully.');                 }                 break;             case "enable":                 if (!arg) {                     console('[PEPlugin] Usage: enable [component]');                 } else {                     $this->enable_com->reset();                     $this->enable_com->bindValue(':com', $arg[0], SQLITE_TEXT);                     $this->enable_plugin->execute();                 }                 break;             case "aboutplugin":                 console('+-------------+');                 console('| /PEPlugin/  |');                 console('+-------------+');                 console('Full source (not including MinePocket exclusive code) could be found at https://github.com/PEPlayer/PocketMine-Plugins.');         }     } 
+<?php 
+  
+/* 
+__PocketMine Plugin__ 
+name=PEPlugin 
+version=0.0.1 
+author=Andrew Pan 
+description=Port of the Essentials Bukkit plugin to PocketMine 
+class=PEPlugin 
+apiversion=7 
+*/
+  
+class PEPlugin implements Plugin 
+{ 
+    private $api; 
+    private $database; 
+    private $afk; 
+    private $un_afk; 
+    private $afk_check; 
+    private $tpa_request; 
+    private $tpa_request_accept; 
+    private $tpa_request_targetfind; 
+    private $disable_com; 
+    private $enable_com; 
+    private $check_com_status; 
+      
+    public function __construct(ServerAPI $api, $server = false) 
+    { 
+        $this->api      = $api; 
+        $this->database = new SQLite3('MinePocket.db'); 
+        /* 
+         * Rules SQL 
+         * (Never to be used) 
+         */
+        $this->database->exec('CREATE TABLE IF NOT EXISTS rules(id INTEGER PRIMARY KEY, rule TEXT)'); 
+        /* 
+         * AFK SQL 
+         */
+        $this->database->exec('CREATE TABLE IF NOT EXISTS afkness (id INTEGER PRIMARY KEY AUTOINCREMENT, player TEXT)'); 
+        $this->afk = $this->database->prepare('INSERT INTO afkness(player) VALUES(:player)'); 
+        $this->un_afk - $this->database->prepare('DELETE FROM afkness WHERE player = :player'); 
+        $this->afk_check = $this->database->prepare('SELECT * FROM afkness WHERE player = :player'); 
+        /* 
+         * TP/A SQL 
+         */
+        $this->database->exec('CREATE TABLE IF NOT EXISTS tpa (id INTEGER PRIMARY KEY AUTOINCREMENT, inrequest STRING, outrequest STRING)'); 
+        $this->tpa_request            = $this->database->prepare('INSERT INTO tpa(inrequest, outrequest) VALUES(:inrequest, :outrequest)'); 
+        $this->tpa_request_accept     = $this->database->prepare('DELETE FROM tpa WHERE inrequest = :inrequest AND outrequest = :outrequest'); 
+        $this->tpa_request_targetfind = $this->database->prepare('SELECT inrequest FROM tpa WHERE outrequest = :outrequest'); 
+        /* 
+         *Disable SQL 
+         */
+        $this->database->exec('CREATE TABLE IF NOT EXISTS disable (id INTEGER PRIMARY KEY AUTOINCREMENT, com STRING)'); 
+        $this->disable_com      = $this->database->prepare('INSERT INTO disable(com) VALUES(:com)'); 
+        $this->enable_com       = $this->database->prepare('DELETE FROM disable WHERE com = :com'); 
+        $this->check_com_status = $this->database->prepare('SELECT * FROM disable WHERE com = :com'); 
+        /* 
+         * End of SQL 
+         */
+          
+    } 
+      
+    public function init() 
+    { 
+        // $this->api->addHandler("player.move", array( 
+        //     $this, 
+        //     "pevent" 
+        // ), 15); 
+        $this->api->console->register("tpa", "Requests to teleport to a player", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("tpaccept", "Accepts teleportation request", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("afk", "Declares that you are AFK", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("status", "Checks AFK status of a player", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("aboutplugin", "About PEPlugin", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("disable", "Disables a component of PEPlugin", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("enable", "Enables a component of PEPlugin that was previously disabled", array( 
+            $this . "hcmd"
+        )); 
+        $this->api->console->register("run", "Runs command as the Server user", array( 
+            $this, 
+            "hcmd"
+        )); 
+        $this->api->console->register("cmdb", "Registers a diamond block as a command block", array( 
+            $this, 
+            "hcmd"
+        )); 
+    } 
+      
+    public function __destruct() 
+    { 
+    } 
+      
+    //    public function pevent($event, $data) 
+    //    { 
+    //        switch ($data) { 
+    //            case "player.move": 
+    //                $EIDdat = $this->api->player->getByEID($data["player"]); 
+    //                $this->afk_check->reset(); 
+    //                $this->afk_check->bindValue(":player", $EIDdat, SQLITE_TEXT); 
+    //                $this->afk_check->execute(); 
+    //                if ($afk === 1) { 
+    //                    $noafk = 0; 
+    //                    $this->no_afk->reset(); 
+    //                    $this->no_afk->bindValue(":player", $EIDdat, SQLITE_TEXT); 
+    //                    $this->no_afk->execute(); 
+    //                    $this->api->chat->broadcast($message = "[PEPlugin] Player " . $EIDdat . "is no longer AFK."); 
+    //                    break; 
+    //                } 
+    //        } 
+    //    } 
+    public function hcmd($cmd, $arg) 
+    { 
+        switch ($cmd) { 
+            case "afk": 
+                $com = "afk"; 
+                $this->com_check_status->reset(); 
+                $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT); 
+                $check = $this->com_check_status->execute(); 
+                if ($check === null) { 
+                    if (!$arg) { 
+                        //console('[PEPlugin] Usage: afk [Your username]'); (OLD) 
+                        console('[PEPlugin] Usage: afk'); 
+                    } else { 
+                        $player = $issuer; 
+                        $this->afk->reset(); 
+                        $this->afk->bindValue(':player', $player, SQLITE_TEXT); 
+                        $this->afk->execute(); 
+                        console('[PEPlugin] Player ' . $player . ' is now AFK.'); 
+                    } 
+                } else { 
+                    console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.'); 
+                } 
+                break; 
+            case "run": 
+                $com = "runcmd"; 
+                $this->com_check_status->reset(); 
+                $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT); 
+                $check = $this->com_check_status->execute(); 
+                if ($check === null) { 
+                    if (!arg) { 
+                        console('[PEPlugin] Usage: run [command]'); 
+                    } else { 
+                        $this->api->console->run($line = $arg, $issuer = "Server"); 
+                    } 
+                } else { 
+                    console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.'); 
+                } 
+                break; 
+            case "tpa": 
+                $com = "tp"; 
+                $this->com_check_status->reset(); 
+                $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT); 
+                $check = $this->com_check_status->execute(); 
+                if ($check === null) { 
+                    if (!$arg) { 
+                        //console('[PEPlugin] Usage: tpa [your username] [username to teleport to]'); (OLD) 
+                        console('[PEPlugin] Usage: tpa [player to teleport to]'); 
+                    } else { 
+                        $this->tpa_request->reset(); 
+                        $this->tpa_request->bindValue(':outrequest', $issuer, SQLITE_TEXT); 
+                        $this->tpa_request->bindValue(':inrequest', $arg[0], SQLITE_TEXT); 
+                        $this->tpa_request->execute(); 
+                        console('[PEPlugin] Teleportation request to ' . $arg[0] . ' sent successfully.'); 
+                    } 
+                } else { 
+                    console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.'); 
+                } 
+                break; 
+            case "tpaccept": 
+                $com = tp; 
+                $this->com_check_status->reset(); 
+                $this->com_check_status->bindValue(':com', $com, SQLITE_TEXT); 
+                $check = $this->com_check_status->execute(); 
+                if ($check === null) { 
+                    if (!$arg) { 
+                        //console('[PEPlugin] Usage: tpaccept [your username]'); (OLD METHOD) 
+                        console('[PEPlugin] Usage: tpaccept'); 
+                    } else { 
+                        $name = $issuer; 
+                        $this->tpa_request_targetfind->reset(); 
+                        $this->tpa_request_targetfind->bindValue(':outrequest', $name, SQLITE_TEXT); 
+                        $target = $this->tpa_request_targetfind->execute(); 
+                        $this->tpa_request_accept->reset(); 
+                        $this->tpa_request_accept->bindValue(':outrequest', $name, SQLITE_TEXT); 
+                        $this->tpa_request_accept->bindValue(':inrequest', $target, SQLITE_TEXT); 
+                        $this->tpa_request_accept->execute(); 
+                        $this->api->player->teleport($name, $target); 
+                        console('[PEPlugin] Teleported ' . $name . ' to ' . $target . ' successfully.'); 
+                    } 
+                } else { 
+                    console('[PEPlugin] The component ' . $com . ' has been disabled by your server administrator.'); 
+                } 
+                  
+                break; 
+            case "disable": 
+                if (!arg) { 
+                    console('[PEPlugin] Usage: disable (component) [tp] [runcmd] [afk]'); 
+                } else { 
+                    $com = $arg[0]; 
+                    $this->disable_com->reset(); 
+                    $this->disable_com->bindValue(':com', $arg[0], SQLITE_TEXT); 
+                    $this->disable_com->execute(); 
+                    console('[PEPlugin] Component ' . $com . ' disabled successfully.'); 
+                } 
+                break; 
+            case "enable": 
+                if (!arg) { 
+                    console('[PEPlugin] Usage: enable [component]'); 
+                } else { 
+                    $this->enable_com->reset(); 
+                    $this->enable_com->bindValue(':com', $arg[0], SQLITE_TEXT); 
+                    $this->enable_plugin->execute(); 
+                } 
+                break; 
+            case "aboutplugin": 
+                console('+-------------+'); 
+                console('| /PEPlugin/  |'); 
+                console('+-------------+'); 
+                console('Full source (not including MinePocket exclusive code) could be found at https://github.com/PEPlayer/PocketMine-Plugins.'); 
+        } 
+    } 
+}
